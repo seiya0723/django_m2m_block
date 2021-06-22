@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>簡易掲示板</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+<body>
+
+    <main class="container">
+
+        ようこそ、{{ request.user }}
+
+
+        <form method="POST">
+            {% csrf_token %}
+            <textarea class="form-control" name="comment"></textarea>
+            <input type="submit" value="送信">
+        </form>
+
+        {% for topic in topics %}
+        <div class="border">
+            <div>投稿者 {{ topic.user.last_name }}:{{ topic.user.first_name }}
+
+                {% if request.user.is_authenticated and request.user.id != topic.user.id %}
+                <form action="{% url 'users:block' topic.user.id %}" method="POST">
+                    {% csrf_token %}
+                    <!--ブロック中であればボタン表記を書き換え-->
+                    {% if request.user in topic.user.blocked.all %}
+                    <button class="btn btn-danger" type="submit">ブロック中</button>
+                    {% else %}
+                    <button class="btn btn-outline-danger" type="submit">ブロック</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </div>
+            <div>{{ topic.comment }}</div>
+
+            <!--投稿者をブロック中かどうか判定する。レコード2個以上の場合、その数だけ出てしまう。-->
+            {% for blocked in topic.user.blocked.all %}
+            {% if request.user.id == blocked.id %}<div>この投稿者をブロックしています。</div>{% endif %}
+            {% endfor %}
+
+            {% if topic.user.blocked.all %}
+            <div>{% for blocked in topic.user.blocked.all %}{{ blocked.last_name }}{{ blocked.first_name }} {% endfor %}
+                 がこの投稿者をブロックしています。
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+
+    </main>
+</body>
+</html>
+
